@@ -85,11 +85,7 @@ Vector<N,T> PropertyList::GetVector(string key) {
     return r;
 }
 
-    void dummy () {
-        // hacking GCC, what's the nice way?
-        PropertyList pflaf("flaf");
-        Vector<3,float> vflaf = pflaf.GetVector<3,float>(string("bla"));
-        Vector<4,float> vflaf2 = pflaf.GetVector<4,float>(string("bla"));
-    }
+    template Vector<3,float> PropertyList::GetVector<3,float>(string key);
+    template Vector<4,float> PropertyList::GetVector<4,float>(string key);
 }
 }
