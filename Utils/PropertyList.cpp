@@ -5,13 +5,15 @@
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string/classification.hpp>
 
+#include <Resources/Exceptions.h>
+
 #include <vector>
 #include <iostream>
 #include <sstream>
 namespace OpenEngine {
 namespace Utils {
 
-using OpenEngine::Resources::File;
+using namespace OpenEngine::Resources;
 using namespace boost;    
 using namespace std;
 
@@ -19,11 +21,28 @@ PropertyList::PropertyList(string filename) : filename(filename) {
     Reload();
 }
 
+void PropertyList::Save() {
+    ofstream ofs(filename.c_str());
+    for(map<string,string>::iterator itr = data.begin();
+        itr != data.end();
+        itr++) {
+        ofs << (*itr).first << " = " << (*itr).second << endl;
+    }
+    ofs.close();
+
+}
+
 void PropertyList::Reload() {
-    ifstream* file = File::Open(filename,ios::binary);
+    ifstream* file;
+    try {
+        file = File::Open(filename,ios::binary);
+    } catch (ResourceException e) {
+        return;
+    }
     string line;
 
     data.clear();
+    lists.clear();
     
     while(getline(*file, line)) {
         vector<string> comment;
@@ -134,7 +153,39 @@ Vector<N,T> PropertyList::GetVector(string key, int idx) {
     return r;
 }
 
-    template Vector<3,float> PropertyList::GetVector<3,float>(string,int);
-    template Vector<4,float> PropertyList::GetVector<4,float>(string,int);
+template Vector<3,float> PropertyList::GetVector<3,float>(string,int);
+template Vector<4,float> PropertyList::GetVector<4,float>(string,int);
+
+void PropertyList::SetString(string key, string value, int idx) {
+    if (idx == -1) {
+        data.insert(make_pair(key,value));
+    } else {
+        ostringstream ost;
+        ost << key << "[" << idx << "]";
+        data.insert(make_pair(ost.str(),value));
+        map<string,map<int,string>* >::iterator itr = lists.find(key);
+        if (itr == lists.end())
+            lists.insert(make_pair(key,new map<int,string>()));
+        map<int,string>* m = lists.find(key)->second;
+        m->insert(make_pair(idx,value));
+    }
+}
+
+template<int N, class T>
+void PropertyList::SetVector(string key,Vector<N,T> v, int idx) {
+    ostringstream ost("v(",ios::ate);
+    for (int j=0;j<N;j++) {
+        ost << v[j] ;
+        if (j+1 != N)
+            ost << ",";
+    }
+    ost << ")";
+    
+    SetString(key,ost.str(),idx);
+
+}    
+
+template void PropertyList::SetVector<3,float>(string,Vector<3,float>,int);
+
 }
 }

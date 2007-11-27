@@ -30,6 +30,7 @@ public:
     ~PropertyList();
 
     void Reload();
+    void Save();
     bool HaveKey(string key);
     string GetString(string key);
     string GetString(string key, int idx);
@@ -38,6 +39,11 @@ public:
     template<int N, class T>
     Vector<N,T> GetVector(string key, int idx = -1);
     int ListSize(string key);
+    // set
+    void SetString(string key,string value, int idx = -1);
+    template<int N, class T>
+    void SetVector(string key,Vector<N,T>v, int idx = -1);
+    
 };
 
 }
