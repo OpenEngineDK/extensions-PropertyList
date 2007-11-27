@@ -22,6 +22,7 @@ public:
 class PropertyList {
 private:    
     map<string,string> data;
+    map<string,map<int,string>* > lists;
     string filename;
 public:
 
@@ -30,10 +31,12 @@ public:
 
     void Reload();
     string GetString(string key);
-    float GetFloat(string key);
-    int GetInt(string key);
+    string GetString(string key, int idx);
+    float GetFloat(string key, int idx = -1);
+    int GetInt(string key, int idx = -1);
     template<int N, class T>
-    Vector<N,T> GetVector(string key);
+    Vector<N,T> GetVector(string key, int idx = -1);
+    int ListSize(string key);
 };
 
 }
