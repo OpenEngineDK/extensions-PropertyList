@@ -30,6 +30,7 @@ public:
     ~PropertyList();
 
     void Reload();
+    bool HaveKey(string key);
     string GetString(string key);
     string GetString(string key, int idx);
     float GetFloat(string key, int idx = -1);

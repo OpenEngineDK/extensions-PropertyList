@@ -60,6 +60,13 @@ void PropertyList::Reload() {
 
 PropertyList::~PropertyList() {}
 
+bool PropertyList::HaveKey(string key) {
+    map<string,string>::iterator iter = data.find(key);
+    if (iter != data.end())
+        return true;
+    return false;
+}
+
 int PropertyList::ListSize(string key) {
     map<string,map<int,string>* >::iterator itr = lists.find(key);
     if (itr == lists.end())
@@ -70,8 +77,11 @@ int PropertyList::ListSize(string key) {
 
 string PropertyList::GetString(string key) {
     map<string,string>::iterator iter = data.find(key);
-    if (iter != data.end())
+    if (iter != data.end()) {
+        logger.info << "get [" << key << "] = [" 
+                    << iter->second << "]" << logger.end; 
         return iter->second;
+    }
     else
         throw KeyNotFound(key);
 }
