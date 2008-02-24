@@ -158,6 +158,7 @@ template Vector<4,float> PropertyList::GetVector<4,float>(string,int);
 
 void PropertyList::SetString(string key, string value, int idx) {
     if (idx == -1) {
+        data.erase(key);
         data.insert(make_pair(key,value));
     } else {
         ostringstream ost;
@@ -167,6 +168,7 @@ void PropertyList::SetString(string key, string value, int idx) {
         if (itr == lists.end())
             lists.insert(make_pair(key,new map<int,string>()));
         map<int,string>* m = lists.find(key)->second;
+        m->erase(idx);
         m->insert(make_pair(idx,value));
     }
 }
