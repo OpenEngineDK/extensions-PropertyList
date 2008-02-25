@@ -21,6 +21,10 @@ PropertyList::PropertyList(string filename) : filename(filename) {
     Reload();
 }
 
+string PropertyList::GetFileName() {
+    return filename;
+}
+
 void PropertyList::Save() {
     FetchPointers();
     ofstream ofs(filename.c_str());
@@ -30,7 +34,10 @@ void PropertyList::Save() {
         ofs << (*itr).first << " = " << (*itr).second << endl;
     }
     ofs.close();
+}
 
+map<string,pair<int,pair<string,void*> > > PropertyList::GetFetctPointers() {
+    return fetchPointers;
 }
 
 void PropertyList::FetchPointers() {

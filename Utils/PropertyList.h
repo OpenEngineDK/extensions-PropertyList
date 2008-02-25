@@ -31,9 +31,11 @@ public:
     PropertyList(string file);
     ~PropertyList();
 
+    string GetFileName();
     void Reload();
     void Save();
     void FetchPointers();
+    map<string,pair<int,pair<string,void*> > > GetFetctPointers();
     bool HaveKey(string key);
     string GetString(string key);
     string GetString(string key, int idx);
