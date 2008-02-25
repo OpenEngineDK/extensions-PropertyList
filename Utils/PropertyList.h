@@ -23,6 +23,8 @@ class PropertyList {
 private:    
     map<string,string> data;
     map<string,map<int,string>* > lists;
+    map<string,pair<int,pair<string,void*> > > fetchPointers;
+    // key, idx, type, pointer
     string filename;
 public:
 
@@ -31,11 +33,15 @@ public:
 
     void Reload();
     void Save();
+    void FetchPointers();
     bool HaveKey(string key);
     string GetString(string key);
     string GetString(string key, int idx);
     float GetFloat(string key, int idx = -1);
+    void SetFloat(float f, string key, int idx = -1);
+    void SetFloatP(float* p, string key, int idx = -1);
     int GetInt(string key, int idx = -1);
+    void SetIntP(int* p, string key, int idx = -1);
     template<int N, class T>
     Vector<N,T> GetVector(string key, int idx = -1);
     int ListSize(string key);

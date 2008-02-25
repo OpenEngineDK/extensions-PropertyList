@@ -22,6 +22,7 @@ PropertyList::PropertyList(string filename) : filename(filename) {
 }
 
 void PropertyList::Save() {
+    FetchPointers();
     ofstream ofs(filename.c_str());
     for(map<string,string>::iterator itr = data.begin();
         itr != data.end();
@@ -30,6 +31,24 @@ void PropertyList::Save() {
     }
     ofs.close();
 
+}
+
+void PropertyList::FetchPointers() {
+    for (map<string,pair<int,pair<string,void*> > >::iterator
+             itr = fetchPointers.begin();
+         itr != fetchPointers.end();
+         itr++) {
+        pair<string,pair<int,pair<string,void*> > > elm = *itr;
+        string key = elm.first;
+        int idx = elm.second.first;
+        string type = elm.second.second.first;
+        void* p = elm.second.second.second;
+        if (type == "float") {
+            SetFloat(*((float*)p), key, idx);
+        } else {
+            logger.error << "Unknown type: " << type << logger.end;
+        }
+    }
 }
 
 void PropertyList::Reload() {
@@ -126,11 +145,39 @@ float PropertyList::GetFloat(string key, int idx) {
     return f;
 }
 
-    int PropertyList::GetInt(string key, int idx) {
-        istringstream i(GetString(key,idx));
+void PropertyList::SetFloat(float f, string key, int idx) {
+    ostringstream ost;
+    ost << f;    
+    SetString(key,ost.str(),idx);   
+}
+
+void PropertyList::SetFloatP(float* p, string key, int idx) {
+    *p = GetFloat(key,idx);
+    fetchPointers.erase(key);
+    pair<string,pair<int,pair<string,void*> > > elm;
+    elm = make_pair<string,
+        pair<int,
+        pair<string,
+        void*> > >(key,
+                   make_pair<int,
+                   pair<string,
+                   void*> >(idx,
+                            make_pair<string,
+                            void*>("float",
+                                   (void*)p)));
+
+    fetchPointers.insert(elm);
+}
+
+int PropertyList::GetInt(string key, int idx) {
+    istringstream i(GetString(key,idx));
     int f;
     i >> f;
     return f;
+}
+
+void PropertyList::SetIntP(int* p, string key, int idx) {
+    *p = GetInt(key, idx);
 }
     
 template<int N, class T>
