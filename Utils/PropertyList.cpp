@@ -6,6 +6,7 @@
 #include <boost/algorithm/string/classification.hpp>
 
 #include <Resources/Exceptions.h>
+#include <Resources/DirectoryManager.h>
 
 #include <vector>
 #include <iostream>
@@ -61,7 +62,8 @@ void PropertyList::FetchPointers() {
 void PropertyList::Reload() {
     ifstream* file;
     try {
-        file = File::Open(filename,ios::binary);
+        string fname = DirectoryManager::FindFileInPath(filename);
+        file = File::Open(fname,ios::binary);
     } catch (ResourceException e) {
         return;
     }
