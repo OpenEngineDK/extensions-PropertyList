@@ -184,7 +184,20 @@ int PropertyList::GetInt(string key, int idx) {
     i >> f;
     return f;
 }
+	
+int* PropertyList::GetIntP(string key, int idx) {
+	int* p = new int(0);
+	SetIntP(p,key,idx);
+	return p;
+}
 
+float* PropertyList::GetFloatP(string key, int idx) {
+	float* p = new float(0);
+	SetFloatP(p,key,idx);
+	return p;
+}
+	
+	
 void PropertyList::SetIntP(int* p, string key, int idx) {
     *p = GetInt(key, idx);
 }

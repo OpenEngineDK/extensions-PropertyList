@@ -41,8 +41,10 @@ public:
     string GetString(string key, int idx);
     float GetFloat(string key, int idx = -1);
     void SetFloat(float f, string key, int idx = -1);
+	float* GetFloatP(string key, int idx = -1);
     void SetFloatP(float* p, string key, int idx = -1);
     int GetInt(string key, int idx = -1);
+	int* GetIntP(string key, int idx = -1);
     void SetIntP(int* p, string key, int idx = -1);
     template<int N, class T>
     Vector<N,T> GetVector(string key, int idx = -1);
