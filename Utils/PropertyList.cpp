@@ -11,6 +11,9 @@
 #include <vector>
 #include <iostream>
 #include <sstream>
+
+#include <Utils/TypeName.h>
+
 namespace OpenEngine {
 namespace Utils {
 
@@ -18,6 +21,9 @@ using namespace OpenEngine::Resources;
 using namespace boost;    
 using namespace std;
 
+    template <typename T> string nameoftype();
+    
+    
 PropertyList::PropertyList(string filename) : filename(filename) {
     Reload();
 }
@@ -195,6 +201,48 @@ float* PropertyList::GetFloatP(string key, int idx) {
 	float* p = new float(0);
 	SetFloatP(p,key,idx);
 	return p;
+}
+	
+template <int N, class T>
+Vector<N,T> *PropertyList::GetVectorP(string key, int idx) {
+	Vector<N,T>* p = new Vector<N,T>();
+	SetVectorP<N,T>(p,key,idx);
+	return p;
+}
+
+template Vector<3,float> *PropertyList::GetVectorP<3,float>(string,int);
+
+    
+template <int N, class T>
+void PropertyList::SetVectorP(Vector<N,T>* p, string key, int idx) {
+    
+    string dim; 
+    stringstream out;
+    out << N;
+    dim = out.str();
+    T x;
+    dim += typeName(x);
+    
+    Vector<N,T> vec = GetVector<N,T>(key, idx);
+
+    for (int i =0; i<N; i++) {
+        (*p)[i] = vec[i];
+    }
+    
+    fetchPointers.erase(key);
+    pair<string,pair<int,pair<string,void*> > > elm;
+    elm = make_pair<string,
+    pair<int,
+    pair<string,
+    void*> > >(key,
+               make_pair<int,
+               pair<string,
+               void*> >(idx,
+                        make_pair<string,
+                        void*>(string("vector") + dim ,
+                               (void*)p)));
+    
+    fetchPointers.insert(elm);
 }
 	
 	

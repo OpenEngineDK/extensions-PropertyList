@@ -47,6 +47,10 @@ public:
 	int* GetIntP(string key, int idx = -1);
     void SetIntP(int* p, string key, int idx = -1);
     template<int N, class T>
+    Vector<N,T> *GetVectorP(string key, int idx = -1);
+    template<int N, class T>
+    void SetVectorP(Vector<N,T> *p, string key, int idx = -1);
+    template<int N, class T>
     Vector<N,T> GetVector(string key, int idx = -1);
     int ListSize(string key);
     // set
