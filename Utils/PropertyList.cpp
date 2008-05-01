@@ -66,45 +66,62 @@ void PropertyList::FetchPointers() {
 }
 
 void PropertyList::Reload() {
+	data.clear();
+    lists.clear();
+
+	ReadFile(filename);
+}
+void PropertyList::ReadFile(string afilename) {
     ifstream* file;
     try {
-        string fname = DirectoryManager::FindFileInPath(filename);
+        string fname = DirectoryManager::FindFileInPath(afilename);
         file = File::Open(fname,ios::binary);
     } catch (ResourceException e) {
         return;
     }
     string line;
 
-    data.clear();
-    lists.clear();
     
     while(getline(*file, line)) {
         vector<string> comment;
         split(comment, line, is_any_of("#"));
         
-        vector<string> set;
-        split(set, comment[0], is_any_of("="));
-        if (set.size() == 2) {
-            trim(set[0]);
-            trim(set[1]);
-
-            vector<string> arr;
-            split(arr, comment[0], is_any_of("[]"));
-            if (arr.size() == 3) {
-                trim(arr[0]);
-                trim(arr[1]);
-                istringstream i(arr[1]);
-                int idx = 4;
-                i >> idx;
-                map<string,map<int,string>* >::iterator itr = lists.find(arr[0]);
-                if (itr == lists.end())
-                    lists.insert(make_pair(arr[0],new map<int,string>()));
-                map<int,string>* m = lists.find(arr[0])->second;
-                m->insert(make_pair(idx,set[1]));
-            }
-
-            data.insert(make_pair(set[0],set[1]));
-        }
+		vector<string> cmd;
+		split(cmd, comment[0], is_any_of("*"));
+		if (cmd.size() == 2) {
+			trim(cmd[0]);
+			trim(cmd[1]);
+			if (cmd[0] == "include") {
+				logger.info << "include [" << cmd[1] << "]" << logger.end;
+				ReadFile(cmd[1]);
+			}
+		}
+		else {
+			
+			vector<string> set;
+			split(set, comment[0], is_any_of("="));
+			if (set.size() == 2) {
+				trim(set[0]);
+				trim(set[1]);
+				
+				vector<string> arr;
+				split(arr, comment[0], is_any_of("[]"));
+				if (arr.size() == 3) {
+					trim(arr[0]);
+					trim(arr[1]);
+					istringstream i(arr[1]);
+					int idx = 4;
+					i >> idx;
+					map<string,map<int,string>* >::iterator itr = lists.find(arr[0]);
+					if (itr == lists.end())
+						lists.insert(make_pair(arr[0],new map<int,string>()));
+					map<int,string>* m = lists.find(arr[0])->second;
+					m->insert(make_pair(idx,set[1]));
+				}
+				
+				data.insert(make_pair(set[0],set[1]));
+			}
+		}
     }
         
     file->close();
@@ -203,6 +220,32 @@ float* PropertyList::GetFloatP(string key, int idx) {
 	return p;
 }
 	
+bool PropertyList::GetBool(string key, int idx) {
+	string s = GetString(key, idx);
+	if (s == "true" || s == "1" )
+		return true;
+	else 
+		return false;
+}
+void PropertyList::SetBoolP(bool* p, string key, int idx) {
+	*p = GetBool(key,idx);
+    fetchPointers.erase(key);
+    pair<string,pair<int,pair<string,void*> > > elm;
+    elm = make_pair<string,
+	pair<int,
+	pair<string,
+	void*> > >(key,
+			   make_pair<int,
+			   pair<string,
+			   void*> >(idx,
+						make_pair<string,
+						void*>("bool",
+							   (void*)p)));
+	
+    fetchPointers.insert(elm);
+	
+}
+	
 template <int N, class T>
 Vector<N,T> *PropertyList::GetVectorP(string key, int idx) {
 	Vector<N,T>* p = new Vector<N,T>();
@@ -247,7 +290,22 @@ void PropertyList::SetVectorP(Vector<N,T>* p, string key, int idx) {
 	
 	
 void PropertyList::SetIntP(int* p, string key, int idx) {
-    *p = GetInt(key, idx);
+	*p = GetInt(key,idx);
+    fetchPointers.erase(key);
+    pair<string,pair<int,pair<string,void*> > > elm;
+    elm = make_pair<string,
+	pair<int,
+	pair<string,
+	void*> > >(key,
+			   make_pair<int,
+			   pair<string,
+			   void*> >(idx,
+						make_pair<string,
+						void*>("int",
+							   (void*)p)));
+	
+    fetchPointers.insert(elm);
+	
 }
     
 template<int N, class T>
@@ -306,5 +364,20 @@ void PropertyList::SetVector(string key,Vector<N,T> v, int idx) {
 
 template void PropertyList::SetVector<3,float>(string,Vector<3,float>,int);
 
+string PropertyList::GroupOf(string key) {
+	unsigned int idx = key.find_last_of(".");
+	if (idx == string::npos)
+		return string("");
+	else
+		return key.substr(0, idx);
+}
+string PropertyList::NameOf(string key) {
+	unsigned int idx = key.find_last_of(".");
+	if (idx == string::npos)
+		return string("");
+	else
+		return key.substr(idx+1);
+}
+	
 }
 }

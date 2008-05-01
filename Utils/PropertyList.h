@@ -33,6 +33,7 @@ public:
 
     string GetFileName();
     void Reload();
+	void ReadFile(string afilename);
     void Save();
     void FetchPointers();
     map<string,pair<int,pair<string,void*> > > GetFetctPointers();
@@ -46,6 +47,8 @@ public:
     int GetInt(string key, int idx = -1);
 	int* GetIntP(string key, int idx = -1);
     void SetIntP(int* p, string key, int idx = -1);
+	bool GetBool(string key, int idx = -1);
+	void SetBoolP(bool* b, string key, int idx = -1);
     template<int N, class T>
     Vector<N,T> *GetVectorP(string key, int idx = -1);
     template<int N, class T>
@@ -58,6 +61,9 @@ public:
     template<int N, class T>
     void SetVector(string key,Vector<N,T>v, int idx = -1);
     
+	
+	static string GroupOf(string key);
+	static string NameOf(string key);
 };
 
 }
