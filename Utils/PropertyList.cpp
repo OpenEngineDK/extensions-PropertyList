@@ -137,6 +137,11 @@ bool PropertyList::HaveKey(string key) {
     return false;
 }
 
+bool PropertyList::IsList(string key) {
+    return ListSize(key) > 0;
+}
+    
+    
 int PropertyList::ListSize(string key) {
     map<string,map<int,string>* >::iterator itr = lists.find(key);
     if (itr == lists.end())
@@ -246,6 +251,31 @@ void PropertyList::SetBoolP(bool* p, string key, int idx) {
 	
 }
 	
+void PropertyList::SetColorP(Vector<4,float> *p, string key, int idx) {
+
+    Vector<4,float> vec = GetVector<4,float>(key, idx);
+    
+    for (int i =0; i<4; i++) {
+        (*p)[i] = vec[i];
+    }
+    
+    fetchPointers.erase(key);
+    pair<string,pair<int,pair<string,void*> > > elm;
+    elm = make_pair<string,
+    pair<int,
+    pair<string,
+    void*> > >(key,
+               make_pair<int,
+               pair<string,
+               void*> >(idx,
+                        make_pair<string,
+                        void*>(string("color") ,
+                               (void*)p)));
+    
+    fetchPointers.insert(elm);
+    
+}
+    
 template <int N, class T>
 Vector<N,T> *PropertyList::GetVectorP(string key, int idx) {
 	Vector<N,T>* p = new Vector<N,T>();

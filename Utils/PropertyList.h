@@ -38,6 +38,7 @@ public:
     void FetchPointers();
     map<string,pair<int,pair<string,void*> > > GetFetctPointers();
     bool HaveKey(string key);
+    bool IsList(string key);
     string GetString(string key);
     string GetString(string key, int idx);
     float GetFloat(string key, int idx = -1);
@@ -48,7 +49,9 @@ public:
 	int* GetIntP(string key, int idx = -1);
     void SetIntP(int* p, string key, int idx = -1);
 	bool GetBool(string key, int idx = -1);
-	void SetBoolP(bool* b, string key, int idx = -1);
+	void SetBoolP(bool* p, string key, int idx = -1);
+    void SetColorP(Vector<4,float>* p, string key, int idx = -1);
+    
     template<int N, class T>
     Vector<N,T> *GetVectorP(string key, int idx = -1);
     template<int N, class T>
