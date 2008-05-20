@@ -59,6 +59,10 @@ void PropertyList::FetchPointers() {
         void* p = elm.second.second.second;
         if (type == "float") {
             SetFloat(*((float*)p), key, idx);
+//        } else if (type == "int") {
+//            SetInt(*((int*)p), key, idx);
+//        } else if (type == "bool") {
+//            SetBool(*((bool*)p), key, idx);
         } else {
             logger.error << "Unknown type: " << type << logger.end;
         }
@@ -404,7 +408,7 @@ string PropertyList::GroupOf(string key) {
 string PropertyList::NameOf(string key) {
 	unsigned int idx = key.find_last_of(".");
 	if (idx == string::npos)
-		return string("");
+		return key;
 	else
 		return key.substr(idx+1);
 }
