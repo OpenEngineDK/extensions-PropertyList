@@ -5,7 +5,9 @@
 #include <Core/Exceptions.h>
 #include <string>
 #include <map>
+#include <set>
 #include <Math/Vector.h>
+#include <Utils/BindingsManager.h>
 
 namespace OpenEngine {
 namespace Utils {
@@ -21,22 +23,28 @@ public:
 
 class PropertyList {
 private:    
+    BindingsManager *mgr;
+
     map<string,string> data;
     map<string,map<int,string>* > lists;
-    map<string,pair<int,pair<string,void*> > > fetchPointers;
-    // key, idx, type, pointer
+
+
+    set<string> boundPointers;
+
     string filename;
 public:
 
     PropertyList(string file);
     ~PropertyList();
 
+    set<string> GetBoundKeys();
+
     string GetFileName();
     void Reload();
 	void ReadFile(string afilename);
     void Save();
     void FetchPointers();
-    map<string,pair<int,pair<string,void*> > > GetFetctPointers();
+
     bool HaveKey(string key);
     bool IsList(string key);
     string GetString(string key);
@@ -48,10 +56,14 @@ public:
     int GetInt(string key, int idx = -1);
 	int* GetIntP(string key, int idx = -1);
     void SetIntP(int* p, string key, int idx = -1);
+    void SetInt(int i, string key, int idx = -1);
 	bool GetBool(string key, int idx = -1);
 	void SetBoolP(bool* p, string key, int idx = -1);
+    void SetBool(bool b, string key, int idx = -1);
     void SetColorP(Vector<4,float>* p, string key, int idx = -1);
     
+    BindingsManager* GetBindingsManager();
+
     template<int N, class T>
     Vector<N,T> *GetVectorP(string key, int idx = -1);
     template<int N, class T>
@@ -61,12 +73,16 @@ public:
     int ListSize(string key);
     // set
     void SetString(string key,string value, int idx = -1);
+
     template<int N, class T>
-    void SetVector(string key,Vector<N,T>v, int idx = -1);
+    void SetVector(Vector<N,T>v,string key, int idx = -1);
     
 	
 	static string GroupOf(string key);
 	static string NameOf(string key);
+    static string RemoveIdx(string key);
+    static string KeyWithIndex(string key, int idx);
+    static int IndexFromKey(string key);
 };
 
 }

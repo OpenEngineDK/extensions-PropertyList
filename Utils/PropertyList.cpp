@@ -25,6 +25,7 @@ using namespace std;
     
     
 PropertyList::PropertyList(string filename) : filename(filename) {
+    mgr = new BindingsManager();
     Reload();
 }
 
@@ -32,40 +33,52 @@ string PropertyList::GetFileName() {
     return filename;
 }
 
+BindingsManager* PropertyList::GetBindingsManager() {
+    return mgr;
+}
+
 void PropertyList::Save() {
     FetchPointers();
-    ofstream ofs(filename.c_str());
+    string fname = DirectoryManager::FindFileInPath(filename);
+    ofstream ofs(fname.c_str());
     for(map<string,string>::iterator itr = data.begin();
         itr != data.end();
         itr++) {
         ofs << (*itr).first << " = " << (*itr).second << endl;
+
     }
     ofs.close();
 }
 
-map<string,pair<int,pair<string,void*> > > PropertyList::GetFetctPointers() {
-    return fetchPointers;
-}
 
 void PropertyList::FetchPointers() {
-    for (map<string,pair<int,pair<string,void*> > >::iterator
-             itr = fetchPointers.begin();
-         itr != fetchPointers.end();
+    for (set<string>::iterator itr = boundPointers.begin();
+         itr != boundPointers.end();
          itr++) {
-        pair<string,pair<int,pair<string,void*> > > elm = *itr;
-        string key = elm.first;
-        int idx = elm.second.first;
-        string type = elm.second.second.first;
-        void* p = elm.second.second.second;
-        if (type == "float") {
-            SetFloat(*((float*)p), key, idx);
-//        } else if (type == "int") {
-//            SetInt(*((int*)p), key, idx);
-//        } else if (type == "bool") {
-//            SetBool(*((bool*)p), key, idx);
-        } else {
-            logger.error << "Unknown type: " << type << logger.end;
-        }
+
+             string k = *itr;
+             string key = RemoveIdx(k);
+             int idx = IndexFromKey(k);
+             string type = mgr->TypeFor(k);
+             
+
+             if (type == typeid(float).name()) {
+                 SetFloat(*(mgr->GetPointer<float>(k)), key, idx);
+             } else if (type == typeid(int).name()) {
+                 SetInt(*(mgr->GetPointer<int>(k)), key, idx);
+             } else if (type == typeid(bool).name()) {
+                 SetBool(*(mgr->GetPointer<bool>(k)), key, idx);
+             } else if (type == typeid(Vector<3,float>).name()) {
+                 SetVector<3,float>(*(mgr->GetPointer<Vector<3,float> >(k)), 
+                                    key,
+                                    idx);
+             } else if (type == typeid(Vector<4,float>).name()) {
+                 SetVector<4,float>(*(mgr->GetPointer<Vector<4,float> >(k)), 
+                                    key,
+                                    idx);
+             } else {
+                 logger.error << "Unknown type: " << type << logger.end;
+             }
     }
 }
 
@@ -134,6 +147,10 @@ void PropertyList::ReadFile(string afilename) {
 
 PropertyList::~PropertyList() {}
 
+    set<string> PropertyList::GetBoundKeys() {
+        return boundPointers;
+    }
+
 bool PropertyList::HaveKey(string key) {
     map<string,string>::iterator iter = data.find(key);
     if (iter != data.end())
@@ -157,8 +174,8 @@ int PropertyList::ListSize(string key) {
 string PropertyList::GetString(string key) {
     map<string,string>::iterator iter = data.find(key);
     if (iter != data.end()) {
-        logger.info << "get [" << key << "] = [" 
-                    << iter->second << "]" << logger.end; 
+//         logger.info << "get [" << key << "] = [" 
+//                     << iter->second << "]" << logger.end; 
         return iter->second;
     }
     else
@@ -192,22 +209,19 @@ void PropertyList::SetFloat(float f, string key, int idx) {
     SetString(key,ost.str(),idx);   
 }
 
+float* PropertyList::GetFloatP(string key, int idx) {
+	float* p = new float(0);
+	SetFloatP(p,key,idx);
+	return p;
+}
+
 void PropertyList::SetFloatP(float* p, string key, int idx) {
     *p = GetFloat(key,idx);
-    fetchPointers.erase(key);
-    pair<string,pair<int,pair<string,void*> > > elm;
-    elm = make_pair<string,
-        pair<int,
-        pair<string,
-        void*> > >(key,
-                   make_pair<int,
-                   pair<string,
-                   void*> >(idx,
-                            make_pair<string,
-                            void*>("float",
-                                   (void*)p)));
-
-    fetchPointers.insert(elm);
+    string k = KeyWithIndex(key, idx);
+    mgr->SetPointer<float>(p, k);
+    boundPointers.insert(k);
+    
+    IndexFromKey(k);
 }
 
 int PropertyList::GetInt(string key, int idx) {
@@ -223,10 +237,17 @@ int* PropertyList::GetIntP(string key, int idx) {
 	return p;
 }
 
-float* PropertyList::GetFloatP(string key, int idx) {
-	float* p = new float(0);
-	SetFloatP(p,key,idx);
-	return p;
+void PropertyList::SetInt(int i, string key, int idx) {
+    ostringstream ost;
+    ost << i;
+    SetString(key, ost.str(), idx);
+}
+
+void PropertyList::SetIntP(int* p, string key, int idx) {
+	*p = GetInt(key,idx);
+	string k = KeyWithIndex(key, idx);
+    mgr->SetPointer<int>(p, k);
+    boundPointers.insert(k);
 }
 	
 bool PropertyList::GetBool(string key, int idx) {
@@ -238,47 +259,24 @@ bool PropertyList::GetBool(string key, int idx) {
 }
 void PropertyList::SetBoolP(bool* p, string key, int idx) {
 	*p = GetBool(key,idx);
-    fetchPointers.erase(key);
-    pair<string,pair<int,pair<string,void*> > > elm;
-    elm = make_pair<string,
-	pair<int,
-	pair<string,
-	void*> > >(key,
-			   make_pair<int,
-			   pair<string,
-			   void*> >(idx,
-						make_pair<string,
-						void*>("bool",
-							   (void*)p)));
-	
-    fetchPointers.insert(elm);
-	
+    string k = KeyWithIndex(key, idx);
+    mgr->SetPointer<bool>(p, k);
+    boundPointers.insert(k);
 }
 	
-void PropertyList::SetColorP(Vector<4,float> *p, string key, int idx) {
+void PropertyList::SetBool(bool b, string key, int idx) {
+    if (b)
+        SetString( key, "true", idx);
+    else 
+        SetString( key, "false", idx);
+}
 
-    Vector<4,float> vec = GetVector<4,float>(key, idx);
-    
-    for (int i =0; i<4; i++) {
-        (*p)[i] = vec[i];
-    }
-    
-    fetchPointers.erase(key);
-    pair<string,pair<int,pair<string,void*> > > elm;
-    elm = make_pair<string,
-    pair<int,
-    pair<string,
-    void*> > >(key,
-               make_pair<int,
-               pair<string,
-               void*> >(idx,
-                        make_pair<string,
-                        void*>(string("color") ,
-                               (void*)p)));
-    
-    fetchPointers.insert(elm);
-    
+void PropertyList::SetColorP(Vector<4,float> *p, string key, int idx) {
+    SetVectorP<4,float>(p,key,idx);
+    string k = KeyWithIndex(key, idx);
+    mgr->SetMetaFor(k, "color");
 }
+
     
 template <int N, class T>
 Vector<N,T> *PropertyList::GetVectorP(string key, int idx) {
@@ -293,53 +291,16 @@ template Vector<3,float> *PropertyList::GetVectorP<3,float>(string,int);
 template <int N, class T>
 void PropertyList::SetVectorP(Vector<N,T>* p, string key, int idx) {
     
-    string dim; 
-    stringstream out;
-    out << N;
-    dim = out.str();
-    T x;
-    dim += typeName(x);
-    
     Vector<N,T> vec = GetVector<N,T>(key, idx);
 
     for (int i =0; i<N; i++) {
         (*p)[i] = vec[i];
     }
     
-    fetchPointers.erase(key);
-    pair<string,pair<int,pair<string,void*> > > elm;
-    elm = make_pair<string,
-    pair<int,
-    pair<string,
-    void*> > >(key,
-               make_pair<int,
-               pair<string,
-               void*> >(idx,
-                        make_pair<string,
-                        void*>(string("vector") + dim ,
-                               (void*)p)));
-    
-    fetchPointers.insert(elm);
-}
-	
-	
-void PropertyList::SetIntP(int* p, string key, int idx) {
-	*p = GetInt(key,idx);
-    fetchPointers.erase(key);
-    pair<string,pair<int,pair<string,void*> > > elm;
-    elm = make_pair<string,
-	pair<int,
-	pair<string,
-	void*> > >(key,
-			   make_pair<int,
-			   pair<string,
-			   void*> >(idx,
-						make_pair<string,
-						void*>("int",
-							   (void*)p)));
-	
-    fetchPointers.insert(elm);
-	
+
+    string k = KeyWithIndex(key, idx);
+    mgr->SetPointer<Vector<N,T> >(p, k);
+    boundPointers.insert(k);
 }
     
 template<int N, class T>
@@ -383,7 +344,7 @@ void PropertyList::SetString(string key, string value, int idx) {
 }
 
 template<int N, class T>
-void PropertyList::SetVector(string key,Vector<N,T> v, int idx) {
+void PropertyList::SetVector(Vector<N,T> v, string key, int idx) {
     ostringstream ost("v(",ios::ate);
     for (int j=0;j<N;j++) {
         ost << v[j] ;
@@ -396,7 +357,7 @@ void PropertyList::SetVector(string key,Vector<N,T> v, int idx) {
 
 }    
 
-template void PropertyList::SetVector<3,float>(string,Vector<3,float>,int);
+template void PropertyList::SetVector<3,float>(Vector<3,float>,string,int);
 
 string PropertyList::GroupOf(string key) {
 	unsigned int idx = key.find_last_of(".");
@@ -408,10 +369,39 @@ string PropertyList::GroupOf(string key) {
 string PropertyList::NameOf(string key) {
 	unsigned int idx = key.find_last_of(".");
 	if (idx == string::npos)
-		return key;
+		return RemoveIdx(key);
 	else
-		return key.substr(idx+1);
+		return RemoveIdx(key.substr(idx+1));
 }
-	
+
+string PropertyList::RemoveIdx(string key) {
+    unsigned int idx = key.find_last_of("[");
+    if (idx == string::npos)
+        return key;
+    else
+        return key.substr(0,idx);
+}
+
+string PropertyList::KeyWithIndex(string key, int idx) {
+    ostringstream k;
+    k << key << "[" << idx << "]";
+    return k.str();
+
+}
+
+int PropertyList::IndexFromKey(string key) {
+    unsigned int idx = key.find_last_of("["),
+        end = key.find_last_of("]");
+    if (idx == string::npos)
+        return -1;
+    
+    string str = key.substr(idx+1, end-idx);
+    istringstream i(str);
+    int x;
+    i >> x;
+    
+    return x;
+}
+
 }
 }
